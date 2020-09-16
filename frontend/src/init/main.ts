@@ -59,6 +59,7 @@ const initPlugin = async () => {
   // @ts-ignore
   miro.addListener(miro.enums.event.WIDGETS_DELETED, async ({ data }) => {
     if (data[0].id === widget.id) {
+      // TO-DO: This is triggering an error, it's not clear why
       miro.board.ui.closeLeftSidebar();
     }
   });
