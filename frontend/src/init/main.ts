@@ -1,5 +1,7 @@
-import { CLIENT_ID } from '../config';
-import appIcon from './icon';
+import { CLIENT_ID } from "../config";
+import appIcon from "./icon";
+
+let widget;
 
 const initChat = (breakoutChatRoomId: string) => {
   miro.__setRuntimeState({
@@ -9,20 +11,20 @@ const initChat = (breakoutChatRoomId: string) => {
   });
 
   miro.board.ui.closeLeftSidebar();
-  miro.board.ui.openLeftSidebar('/chat');
+  miro.board.ui.openLeftSidebar("/chat");
 };
 
 const handleAddChatClick = async () => {
   const viewport = await miro.board.viewport.get();
 
-  const widget = (
+  widget = (
     await miro.board.widgets.create({
-      type: 'SHAPE',
-      text: 'click to join a breakout chat',
+      type: "SHAPE",
+      text: "click to join a breakout chat",
       width: 300,
       style: {
         shapeType: 6,
-        backgroundColor: '#fff',
+        backgroundColor: "#fff",
         fontFamily: miro.enums.fontFamily.PERMANENT_MARKER,
         borderWidth: 7,
       },
@@ -54,10 +56,17 @@ const initPlugin = async () => {
     }
   });
 
+  // @ts-ignore
+  miro.addListener(miro.enums.event.WIDGETS_DELETED, async ({ data }) => {
+    if (data[0].id === widget.id) {
+      miro.board.ui.closeLeftSidebar();
+    }
+  });
+
   await miro.initialize({
     extensionPoints: {
       bottomBar: {
-        title: 'Create a new breakout chat',
+        title: "Create a new breakout chat",
         svgIcon: appIcon,
         onClick: handleAddChatClick,
       },
@@ -70,8 +79,8 @@ miro.onReady(async () => {
   if (authorized) {
     initPlugin();
   } else {
-    const res = await miro.board.ui.openModal('not-authorized.html');
-    if (res === 'success') {
+    const res = await miro.board.ui.openModal("not-authorized.html");
+    if (res === "success") {
       initPlugin();
     }
   }
