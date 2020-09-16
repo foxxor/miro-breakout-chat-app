@@ -1,43 +1,52 @@
-import socketioControllerFactory from './controllers/socketIoController';
-import Chat from './components/Chat/Chat.svelte';
-import Error from './components/Error.svelte';
+import socketioControllerFactory from "./controllers/socketIoController";
+import Chat from "./components/Chat/Chat.svelte";
+import Error from "./components/Error.svelte";
+import type { User } from "./interfaces/chat";
 
-import { CLIENT_ID } from '../config';
+import { CLIENT_ID } from "../config";
 
-const initApp = (
-	roomId: string,
-	name: string,
-) => {
-	const app = new Chat({
-		target: document.body,
-		props: {
-			roomId,
-			name,
-			chatFactory: socketioControllerFactory,
-		}
-	});
-}
+const initApp = (boardId: string, roomId: string, user: User) => {
+  const app = new Chat({
+    target: document.body,
+    props: {
+      boardId,
+      roomId,
+      user,
+      chatFactory: socketioControllerFactory,
+    },
+  });
+};
 
-const getCurrentUserName = async () => {
-	const id = await miro.currentUser.getId();
-	// @ts-ignore
-	const onlineUsers = await miro.board.getOnlineUsers();
+const getCurrentUser = async (): Promise<User> => {
+  const id = await miro.currentUser.getId();
+  // @ts-ignore
+  const onlineUsers = await miro.board.getOnlineUsers();
 
-	return onlineUsers.find(user => user.id === id)?.name;
-}
+  const miroUser = onlineUsers.find((user) => user.id === id);
+  const userToken = await miro.getToken();
+
+  return {
+    id: miroUser.id,
+    name: miroUser.name,
+    token: userToken,
+  };
+};
+
+const getCurrentBoard = async () => {
+  return await miro.board.info.get();
+};
 
 miro.onReady(async () => {
-	const savedState = await miro.__getRuntimeState();
-	const name = await getCurrentUserName();
+  const savedState = await miro.__getRuntimeState();
+  const user = await getCurrentUser();
+  const board = await getCurrentBoard();
 
-	if (savedState[CLIENT_ID]?.breakoutChatRoomId && name) {
-		initApp(
-			savedState[CLIENT_ID]?.breakoutChatRoomId,
-			name,
-		);
-	} else {
-		const app = new Error({
-			target: document.body,
-		})
-	}
+  if (savedState[CLIENT_ID]?.breakoutChatRoomId && user) {
+    // @ts-ignore
+    initApp(board.id, savedState[CLIENT_ID]?.breakoutChatRoomId, user);
+  } else {
+    const app = new Error({
+      target: document.body,
+    });
+  }
 });
